@@ -1,11 +1,18 @@
-const WebSocket = require("ws")
-const xml2js = require("xml2js")
-const crypto = require("crypto")
+import * as WebSocket from "ws";
+import * as xml2js from "xml2js";
+import * as crypto from "crypto";
 
-export default function Session(username, password) {
+export function Session(username, password) {
 
-    async function getCSRF() {
-        return await fetch("https://scratch.mit.edu/csrf_token/").then(response => response.headers.get("set-cookie").split("scratchcsrftoken=")[1].split(";")[0])
+    async function getCSRF(setVars) {
+        const request = fetch("https://scratch.mit.edu/csrf_token/")
+        if (setVars) request.then(res => {
+            const csrf = res.headers.get("set-cookie").split("scratchcsrftoken=")[1].split(";")[0]
+            headers["Cookie"] = `scratchcsrftoken=${csrf};`
+            headers["X-CSRFToken"] = csrf
+            context.csrfToken = csrf
+        })
+        return await request
     }
 
     function getXmlHeaders(data) {
@@ -27,7 +34,9 @@ export default function Session(username, password) {
         "Content-Type": "application/json",
         "Sec-Fetch-Dest": "empty",
         "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-origin"
+        "Sec-Fetch-Site": "same-origin",
+        "X-Token": "",
+        "Cookie": ""
     }
 
     const context = this
@@ -36,11 +45,10 @@ export default function Session(username, password) {
     context.xToken = null
     context.sessionId = null
 
-    context.fail = false
-    context.active = false
-
     context.password = password
     context.username = username
+
+    context.loginStatus = false
 
     context.xmlParser = {
         profileComments: data => {
@@ -113,28 +121,34 @@ export default function Session(username, password) {
         }
     }
 
+
+    context.onReady = () => {
+        console.log("Success.")
+        console.log("\x1b[2mThis message/callback function can be changed. Set this function at session.onReady")
+    }
+    context.onFail = (message) => {
+        console.log("Error: " + message)
+        console.log("\x1b[2mThis message/callback function can be changed. Set this function at session.onFail")
+    }
+
     context.initialize = () => {
         if (!context.initialized) {
-            return getCSRF().then(csrf => {
-                headers["Cookie"] = `scratchcsrftoken=${csrf};`
-                headers["X-CSRFToken"] = csrf
-                fetch("https://scratch.mit.edu/accounts/login/", {
-                    "credentials": "include",
-                    headers,
-                    "referrer": "https://scratch.mit.edu/",
-                    "body": "{\"username\":\"" + context.username + "\",\"password\":\"" + context.password + "\",\"useMessages\":true}",
-                    "method": "POST",
-                    "mode": "cors"
-                }).then(response =>
+            getCSRF(true).then(r => {
+                if (r.status === 200) {fetch("https://scratch.mit.edu/accounts/login/", {
+                "credentials": "include",
+                headers,
+                "referrer": "https://scratch.mit.edu/",
+                "body": "{\"username\":\"" + context.username + "\",\"password\":\"" + context.password + "\",\"useMessages\":true}",
+                "method": "POST",
+                "mode": "cors"
+
+            }).then(response =>
                     response.json().then(res => {
                         const data = res[0]
-                        if (data.success === 1) {
-                            context.active = true
+                        if (data.success === 1 && response.status === 200) {
                             context.initialized = true
                             context.sessionId = response.headers.get("set-cookie").split("scratchsessionsid=")[1].split(";")[0]
                             context.xToken = data.token
-                            context.csrfToken = csrf
-                            headers["X-CSRFToken"] = context.csrfToken
                             headers["X-Token"] = context.xToken
                             headers["Cookie"] = `scratchcsrftoken=${context.csrfToken};scratchsessionsid=${context.sessionId};`
                             fetch("https://scratch.mit.edu/session/", {
@@ -144,20 +158,24 @@ export default function Session(username, password) {
                                 "mode": "cors",
                             }).then(response => response.json().then(res => {
                                 headers["Cookie"] += `permissions=${encodeURIComponent(JSON.stringify(res.permissions))};`
+                                if (response.status === 200) context.onReady()
+                                else context.onFail()
                             }))
                         } else {
-                            return false
+                            context.onFail("Bad response")
                         }
                     })
                 )
+                }
+    })
 
-            })
         } else {
-            return false
+            context.onFail("Already logged in")
         }
     }
 
     context.end = () => {
+        context.initialized = false
         return fetch("https://scratch.mit.edu/accounts/logout/", {
             "credentials": "include",
             headers,
@@ -167,18 +185,24 @@ export default function Session(username, password) {
         })
     }
 
-    context.setAsset = (file, extension) => {
-        const id = crypto.createHash("md5").update(file).digest("hex")
-        return {
-            "promise": fetch(`https://assets.scratch.mit.edu/${id}.${extension}`, {
-                "credentials": "omit",
+    context.frontPage = {
+        getFrontpaged: () => {
+            return fetch("https://scratch.mit.edu/proxy/featured/", {
+                "credentials": "include",
                 headers,
                 "referrer": "https://scratch.mit.edu/",
-                "body": file,
                 "method": "POST",
                 "mode": "cors"
-            }),
-            id
+            })
+        },
+        getNews: (offset, limit) => {
+            return fetch("https://api.scratch.mit.edu/news?limit=" + limit, {
+                "credentials": "include",
+                headers,
+                "referrer": "https://scratch.mit.edu/",
+                "method": "POST",
+                "mode": "cors"
+            })
         }
     }
 
@@ -191,10 +215,21 @@ export default function Session(username, password) {
                 "credentials": "include",
                 headers,
                 "referrer": "https://scratch.mit.edu/",
-                "body": data,
+                "body": JSON.stringify(data),
                 "method": "PUT",
                 "mode": "cors"
             })
+        }
+
+        projectContext.setThumbnail = PngString => {
+            return fetch("https://scratch.mit.edu/internalapi/project/thumbnail/" + projectContext.id + "/set/", {
+                "credentials": "include",
+                headers,
+                "referrer": "https://scratch.mit.edu/projects/" + projectContext.id + "/editor",
+                "body": PngString,
+                "method": "POST",
+                "mode": "cors"
+            });
         }
 
         projectContext.getMeta = () => {
@@ -284,6 +319,26 @@ export default function Session(username, password) {
                 headers,
                 "referrer": "https://scratch.mit.edu/",
                 "body": "{\"content\":\"" + content + "\",\"parent_id\":\"" + (replyOptions ? replyOptions.parent : "") + "\",\"commentee_id\":\"" + (replyOptions ? replyOptions.comentee : "") + "\"}",
+                "method": "POST",
+                "mode": "cors"
+            })
+        }
+
+        projectContext.postLove = () => {
+            return fetch("https://api.scratch.mit.edu/proxy/projects/" + projectContext.id + "/loves/user/" + context.username, {
+                "credentials": "include",
+                headers,
+                "referrer": "https://scratch.mit.edu/",
+                "method": "POST",
+                "mode": "cors"
+            })
+        }
+
+        projectContext.postFavorite = () => {
+            return fetch("https://api.scratch.mit.edu/proxy/projects/" + projectContext.id + "/favorites/user/" + context.username, {
+                "credentials": "include",
+                headers,
+                "referrer": "https://scratch.mit.edu/",
                 "method": "POST",
                 "mode": "cors"
             })
@@ -426,7 +481,7 @@ export default function Session(username, password) {
                 "credentials": "include",
                 headers,
                 "referrer": `https://scratch.mit.edu/studios/${studioId}`,
-                "body": data,
+                "body": JSON.stringify(data),
                 "method": "PUT",
                 "mode": "cors"
             })
@@ -754,8 +809,53 @@ export default function Session(username, password) {
             }
         }
 
+        userContext.getSharedProjects = (offset, limit) => {
+            return fetch(`https://api.scratch.mit.edu/users/${userContext.username}/projects?limit=${limit}&offset=${offset}`, {
+                "credentials": "include",
+                headers,
+                "method": "GET",
+                "mode": "cors"
+            })
+        }
+
+        userContext.getFavoriteProjects = (offset, limit) => {
+            return fetch(`https://api.scratch.mit.edu/users/${userContext.username}/favorites?limit=${limit}&offset=${offset}`, {
+                "credentials": "include",
+                headers,
+                "method": "GET",
+                "mode": "cors"
+            })
+        }
+
+        userContext.getFollowing = (offset, limit) => {
+            return fetch(`https://api.scratch.mit.edu/users/${userContext.username}/following?limit=${limit}&offset=${offset}`, {
+                "credentials": "include",
+                headers,
+                "method": "GET",
+                "mode": "cors"
+            })
+        }
+
+        userContext.getFollowers = (offset, limit) => {
+            return fetch(`https://api.scratch.mit.edu/users/${userContext.username}/followers?limit=${limit}&offset=${offset}`, {
+                "credentials": "include",
+                headers,
+                "method": "GET",
+                "mode": "cors"
+            })
+        }
+
+        userContext.getCuratedStudios = (offset, limit) => {
+            return fetch(`https://api.scratch.mit.edu/users/${userContext.username}/studios/curate?limit=${limit}&offset=${offset}`, {
+                "credentials": "include",
+                headers,
+                "method": "GET",
+                "mode": "cors"
+            })
+        }
     }
-    context.self = function () {
+
+    context.Self = function () {
         const sContext = this
         const user = new context.User(context.username)
 
@@ -763,6 +863,11 @@ export default function Session(username, password) {
         sContext.follow = user.follow
         sContext.unfollow = user.unfollow
         sContext.getMessagesCount = user.getMessagesCount
+        sContext.getSharedProjects = user.getSharedProjects
+        sContext.getFavoriteProjects = user.getFavoriteProjects
+        sContext.getFollowing = user.getFollowing
+        sContext.getFollowers = user.getFollowers
+        sContext.getCuratedStudios = user.getCuratedStudios
 
         sContext.xmlProfile = user.xmlProfile
 
@@ -827,7 +932,7 @@ export default function Session(username, password) {
                 "credentials": "include",
                 headers,
                 "method": "GET",
-                "mode": "cors",
+                "mode": "cors"
             })
         }
 
@@ -854,7 +959,94 @@ export default function Session(username, password) {
                 "credentials": "include",
                 headers,
                 "method": "PUT",
-                "mode": "cors",
+                "mode": "cors"
+            })
+        }
+
+        sContext.setAsset = (file, extension) => {
+            const id = crypto.createHash("md5").update(file).digest("hex")
+            return {
+                "promise": fetch(`https://assets.scratch.mit.edu/${id}.${extension}`, {
+                    "credentials": "omit",
+                    headers,
+                    "referrer": "https://scratch.mit.edu/",
+                    "body": file,
+                    "method": "POST",
+                    "mode": "cors"
+                }),
+                id
+            }
+        }
+
+        sContext.getActivity = (offset, limit) => {
+            console.log(headers)
+            return fetch("https://api.scratch.mit.edu/users/" + context.username + "/following/users/activity?limit=" + limit + "&offset=" + offset, {
+                "credentials": "include",
+                headers,
+                "referrer": "https://scratch.mit.edu/",
+                "method": "GET",
+                "mode": "cors"
+            })
+        }
+
+        sContext.getFollowedStudioProjects = () => {
+            return fetch("https://api.scratch.mit.edu/users/" + context.username + "/following/studios/projects", {
+                "credentials": "include",
+                headers,
+                "referrer": "https://scratch.mit.edu/",
+                "method": "GET",
+                "mode": "cors"
+            })
+        }
+
+        sContext.getFollowedUserProjects = () => {
+            return fetch("https://api.scratch.mit.edu/users/" + context.username + "/following/users/projects", {
+                "credentials": "include",
+                headers,
+                "referrer": "https://scratch.mit.edu/",
+                "method": "GET",
+                "mode": "cors"
+            })
+        }
+
+        sContext.getFollowedUserLoves = () => {
+            return fetch("https://api.scratch.mit.edu/users/" + context.username + "/following/users/loves", {
+                "credentials": "include",
+                headers,
+                "referrer": "https://scratch.mit.edu/",
+                "method": "GET",
+                "mode": "cors"
+            })
+        }
+
+        sContext.getRecentProjects = (offset, limit) => {
+            return fetch("https://api.scratch.mit.edu/users/" + context.username + "/projects/recentlyviewed?limit=" + limit + "&offset=" + offset, {
+                "credentials": "include",
+                headers,
+                "referrer": "https://scratch.mit.edu/",
+                "method": "GET",
+                "mode": "cors"
+            })
+        }
+
+        sContext.createProject = data => {
+            return fetch("https://projects.scratch.mit.edu", {
+                "credentials": "include",
+                headers,
+                "referrer": "https://scratch.mit.edu/",
+                "body": (!data.preset && data.projectData)?JSON.stringify(data.projectData) : '{"targets":[{"isStage":true,"name":"Stage","variables":{"`jEk@4|i[#Fk?(8x)AV.-my variable":["my variable",0]},"lists":{},"broadcasts":{},"blocks":{},"comments":{},"currentCostume":0,"costumes":[{"name":"backdrop1","dataFormat":"svg","assetId":"cd21514d0531fdffb22204e0ec5ed84a","md5ext":"cd21514d0531fdffb22204e0ec5ed84a.svg","rotationCenterX":240,"rotationCenterY":180}],"sounds":[{"name":"pop","assetId":"83a9787d4cb6f3b7632b4ddfebf74367","dataFormat":"wav","format":"","rate":48000,"sampleCount":1124,"md5ext":"83a9787d4cb6f3b7632b4ddfebf74367.wav"}],"volume":100,"layerOrder":0,"tempo":60,"videoTransparency":50,"videoState":"on","textToSpeechLanguage":null},{"isStage":false,"name":"Sprite1","variables":{},"lists":{},"broadcasts":{},"blocks":{},"comments":{},"currentCostume":0,"costumes":[{"name":"costume1","bitmapResolution":1,"dataFormat":"svg","assetId":"bcf454acf82e4504149f7ffe07081dbc","md5ext":"bcf454acf82e4504149f7ffe07081dbc.svg","rotationCenterX":48,"rotationCenterY":50},{"name":"costume2","bitmapResolution":1,"dataFormat":"svg","assetId":"0fb9be3e8397c983338cb71dc84d0b25","md5ext":"0fb9be3e8397c983338cb71dc84d0b25.svg","rotationCenterX":46,"rotationCenterY":53}],"sounds":[{"name":"Meow","assetId":"83c36d806dc92327b9e7049a565c6bff","dataFormat":"wav","format":"","rate":48000,"sampleCount":40682,"md5ext":"83c36d806dc92327b9e7049a565c6bff.wav"}],"volume":100,"layerOrder":1,"visible":true,"x":0,"y":0,"size":100,"direction":90,"draggable":false,"rotationStyle":"all around"}],"monitors":[],"extensions":[],"meta":{"semver":"3.0.0","vm":"1.5.92","agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/117.0"}}',
+                "method": "POST",
+                "mode": "cors"
+            })
+        }
+
+        sContext.createStudio = () => {
+            return fetch("https://scratch.mit.edu/studios/create/", {
+                "credentials": "include",
+                headers,
+                "referrer": "https://scratch.mit.edu/",
+                "method": "POST",
+                "mode": "cors"
             })
         }
     }

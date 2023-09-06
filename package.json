@@ -1,6 +1,7 @@
 {
   "name": "javascratch",
   "version": "1.0.0",
+  "type": "module",
   "dependencies": {
     "domhandler": "^5.0.3",
     "node-html-parser": "^6.1.5",

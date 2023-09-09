@@ -2,7 +2,7 @@ import * as WebSocket from "ws";
 import * as xml2js from "xml2js";
 import * as crypto from "crypto";
 
-export function Session(username, password) {
+function Session(username, password) {
 
     async function getCSRF(setVars) {
         const request = fetch("https://scratch.mit.edu/csrf_token/")
@@ -1051,3 +1051,5 @@ export function Session(username, password) {
         }
     }
 }
+
+module.exports = Session

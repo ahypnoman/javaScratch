@@ -3,9 +3,24 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "domhandler": "^5.0.3",
-    "node-html-parser": "^6.1.5",
     "ws": "^8.13.0",
     "xml2js": "^0.6.2"
-  }
+  },
+  "description": "Communicate with the Scratch API",
+  "main": "javaScratch.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "(https://github.com/ahypnoman/javaScratch.git)"
+  },
+  "keywords": [
+    "scratch",
+    "scratch-api",
+    "scratch-3.0"
+  ],
+  "author": "AHypnoman",
+  "license": "AGPL-3.0"
 }

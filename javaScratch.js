@@ -1,6 +1,6 @@
-import * as WebSocket from "ws";
-import * as xml2js from "xml2js";
-import * as crypto from "crypto";
+const WebSocket = require("ws")
+const xml2js = require("xml2js")
+const crypto = require("crypto")
 
 function Session(username, password) {
 
@@ -134,40 +134,41 @@ function Session(username, password) {
     context.initialize = () => {
         if (!context.initialized) {
             getCSRF(true).then(r => {
-                if (r.status === 200) {fetch("https://scratch.mit.edu/accounts/login/", {
-                "credentials": "include",
-                headers,
-                "referrer": "https://scratch.mit.edu/",
-                "body": "{\"username\":\"" + context.username + "\",\"password\":\"" + context.password + "\",\"useMessages\":true}",
-                "method": "POST",
-                "mode": "cors"
+                if (r.status === 200) {
+                    fetch("https://scratch.mit.edu/accounts/login/", {
+                        "credentials": "include",
+                        headers,
+                        "referrer": "https://scratch.mit.edu/",
+                        "body": "{\"username\":\"" + context.username + "\",\"password\":\"" + context.password + "\",\"useMessages\":true}",
+                        "method": "POST",
+                        "mode": "cors"
 
-            }).then(response =>
-                    response.json().then(res => {
-                        const data = res[0]
-                        if (data.success === 1 && response.status === 200) {
-                            context.initialized = true
-                            context.sessionId = response.headers.get("set-cookie").split("scratchsessionsid=")[1].split(";")[0]
-                            context.xToken = data.token
-                            headers["X-Token"] = context.xToken
-                            headers["Cookie"] = `scratchcsrftoken=${context.csrfToken};scratchsessionsid=${context.sessionId};`
-                            fetch("https://scratch.mit.edu/session/", {
-                                "credentials": "include",
-                                headers,
-                                "method": "GET",
-                                "mode": "cors",
-                            }).then(response => response.json().then(res => {
-                                headers["Cookie"] += `permissions=${encodeURIComponent(JSON.stringify(res.permissions))};`
-                                if (response.status === 200) context.onReady()
-                                else context.onFail()
-                            }))
-                        } else {
-                            context.onFail("Bad response")
-                        }
-                    })
-                )
+                    }).then(response =>
+                        response.json().then(res => {
+                            const data = res[0]
+                            if (data.success === 1 && response.status === 200) {
+                                context.initialized = true
+                                context.sessionId = response.headers.get("set-cookie").split("scratchsessionsid=")[1].split(";")[0]
+                                context.xToken = data.token
+                                headers["X-Token"] = context.xToken
+                                headers["Cookie"] = `scratchcsrftoken=${context.csrfToken};scratchsessionsid=${context.sessionId};`
+                                fetch("https://scratch.mit.edu/session/", {
+                                    "credentials": "include",
+                                    headers,
+                                    "method": "GET",
+                                    "mode": "cors",
+                                }).then(response => response.json().then(res => {
+                                    headers["Cookie"] += `permissions=${encodeURIComponent(JSON.stringify(res.permissions))};`
+                                    if (response.status === 200) context.onReady()
+                                    else context.onFail()
+                                }))
+                            } else {
+                                context.onFail("Bad response")
+                            }
+                        })
+                    )
                 }
-    })
+            })
 
         } else {
             context.onFail("Already logged in")
@@ -1034,7 +1035,7 @@ function Session(username, password) {
                 "credentials": "include",
                 headers,
                 "referrer": "https://scratch.mit.edu/",
-                "body": (!data.preset && data.projectData)?JSON.stringify(data.projectData) : '{"targets":[{"isStage":true,"name":"Stage","variables":{"`jEk@4|i[#Fk?(8x)AV.-my variable":["my variable",0]},"lists":{},"broadcasts":{},"blocks":{},"comments":{},"currentCostume":0,"costumes":[{"name":"backdrop1","dataFormat":"svg","assetId":"cd21514d0531fdffb22204e0ec5ed84a","md5ext":"cd21514d0531fdffb22204e0ec5ed84a.svg","rotationCenterX":240,"rotationCenterY":180}],"sounds":[{"name":"pop","assetId":"83a9787d4cb6f3b7632b4ddfebf74367","dataFormat":"wav","format":"","rate":48000,"sampleCount":1124,"md5ext":"83a9787d4cb6f3b7632b4ddfebf74367.wav"}],"volume":100,"layerOrder":0,"tempo":60,"videoTransparency":50,"videoState":"on","textToSpeechLanguage":null},{"isStage":false,"name":"Sprite1","variables":{},"lists":{},"broadcasts":{},"blocks":{},"comments":{},"currentCostume":0,"costumes":[{"name":"costume1","bitmapResolution":1,"dataFormat":"svg","assetId":"bcf454acf82e4504149f7ffe07081dbc","md5ext":"bcf454acf82e4504149f7ffe07081dbc.svg","rotationCenterX":48,"rotationCenterY":50},{"name":"costume2","bitmapResolution":1,"dataFormat":"svg","assetId":"0fb9be3e8397c983338cb71dc84d0b25","md5ext":"0fb9be3e8397c983338cb71dc84d0b25.svg","rotationCenterX":46,"rotationCenterY":53}],"sounds":[{"name":"Meow","assetId":"83c36d806dc92327b9e7049a565c6bff","dataFormat":"wav","format":"","rate":48000,"sampleCount":40682,"md5ext":"83c36d806dc92327b9e7049a565c6bff.wav"}],"volume":100,"layerOrder":1,"visible":true,"x":0,"y":0,"size":100,"direction":90,"draggable":false,"rotationStyle":"all around"}],"monitors":[],"extensions":[],"meta":{"semver":"3.0.0","vm":"1.5.92","agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/117.0"}}',
+                "body": (!data.preset && data.projectData) ? JSON.stringify(data.projectData) : '{"targets":[{"isStage":true,"name":"Stage","variables":{"`jEk@4|i[#Fk?(8x)AV.-my variable":["my variable",0]},"lists":{},"broadcasts":{},"blocks":{},"comments":{},"currentCostume":0,"costumes":[{"name":"backdrop1","dataFormat":"svg","assetId":"cd21514d0531fdffb22204e0ec5ed84a","md5ext":"cd21514d0531fdffb22204e0ec5ed84a.svg","rotationCenterX":240,"rotationCenterY":180}],"sounds":[{"name":"pop","assetId":"83a9787d4cb6f3b7632b4ddfebf74367","dataFormat":"wav","format":"","rate":48000,"sampleCount":1124,"md5ext":"83a9787d4cb6f3b7632b4ddfebf74367.wav"}],"volume":100,"layerOrder":0,"tempo":60,"videoTransparency":50,"videoState":"on","textToSpeechLanguage":null},{"isStage":false,"name":"Sprite1","variables":{},"lists":{},"broadcasts":{},"blocks":{},"comments":{},"currentCostume":0,"costumes":[{"name":"costume1","bitmapResolution":1,"dataFormat":"svg","assetId":"bcf454acf82e4504149f7ffe07081dbc","md5ext":"bcf454acf82e4504149f7ffe07081dbc.svg","rotationCenterX":48,"rotationCenterY":50},{"name":"costume2","bitmapResolution":1,"dataFormat":"svg","assetId":"0fb9be3e8397c983338cb71dc84d0b25","md5ext":"0fb9be3e8397c983338cb71dc84d0b25.svg","rotationCenterX":46,"rotationCenterY":53}],"sounds":[{"name":"Meow","assetId":"83c36d806dc92327b9e7049a565c6bff","dataFormat":"wav","format":"","rate":48000,"sampleCount":40682,"md5ext":"83c36d806dc92327b9e7049a565c6bff.wav"}],"volume":100,"layerOrder":1,"visible":true,"x":0,"y":0,"size":100,"direction":90,"draggable":false,"rotationStyle":"all around"}],"monitors":[],"extensions":[],"meta":{"semver":"3.0.0","vm":"1.5.92","agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/117.0"}}',
                 "method": "POST",
                 "mode": "cors"
             })
@@ -1052,4 +1053,4 @@ function Session(username, password) {
     }
 }
 
-module.exports = Session
+exports.Session = Session

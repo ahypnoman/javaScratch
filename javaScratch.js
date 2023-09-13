@@ -2,7 +2,7 @@ const WebSocket = require("ws")
 const xml2js = require("xml2js")
 const crypto = require("crypto")
 
-function Session(username, password) {
+function Session(username, password, options) {
 
     async function getCSRF(setVars) {
         const request = fetch("https://scratch.mit.edu/csrf_token/")
@@ -23,7 +23,7 @@ function Session(username, password) {
         return head
     }
 
-    const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/115.0"
+    const userAgent = options.userAgent || "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/115.0"
 
     const headers = {
         "referer": "https://scratch.mit.edu/",
@@ -857,22 +857,22 @@ function Session(username, password) {
     }
 
     context.Self = function () {
-        const sContext = this
+        const selfContext = this
         const user = new context.User(context.username)
 
-        sContext.getInfo = user.getInfo
-        sContext.follow = user.follow
-        sContext.unfollow = user.unfollow
-        sContext.getMessagesCount = user.getMessagesCount
-        sContext.getSharedProjects = user.getSharedProjects
-        sContext.getFavoriteProjects = user.getFavoriteProjects
-        sContext.getFollowing = user.getFollowing
-        sContext.getFollowers = user.getFollowers
-        sContext.getCuratedStudios = user.getCuratedStudios
+        selfContext.getInfo = user.getInfo
+        selfContext.follow = user.follow
+        selfContext.unfollow = user.unfollow
+        selfContext.getMessagesCount = user.getMessagesCount
+        selfContext.getSharedProjects = user.getSharedProjects
+        selfContext.getFavoriteProjects = user.getFavoriteProjects
+        selfContext.getFollowing = user.getFollowing
+        selfContext.getFollowers = user.getFollowers
+        selfContext.getCuratedStudios = user.getCuratedStudios
 
-        sContext.xmlProfile = user.xmlProfile
+        selfContext.xmlProfile = user.xmlProfile
 
-        sContext.xmlProfile.removeComment = commentId => {
+        selfContext.xmlProfile.removeComment = commentId => {
             const data = {
                 "id": commentId,
             }
@@ -888,7 +888,7 @@ function Session(username, password) {
             })
         }
 
-        sContext.xmlProfile.toggleComments = () => {
+        selfContext.xmlProfile.toggleComments = () => {
             const head = getXmlHeaders("")
             return fetch(`https://scratch.mit.edu/site-api/comments/user/${context.username}/toggle-comments/`, {
                 "credentials": "include",
@@ -898,7 +898,7 @@ function Session(username, password) {
             })
         }
 
-        sContext.myStuff = {
+        selfContext.myStuff = {
             getProjects: page => {
                 return fetch(`https://scratch.mit.edu/site-api/projects/all/?page=${page}`, {
                     "credentials": "include",
@@ -919,7 +919,7 @@ function Session(username, password) {
             }
         }
 
-        sContext.getAccountNavJson = () => {
+        selfContext.getAccountNavJson = () => {
             return fetch("https://scratch.mit.edu/fragment/account-nav.json", {
                 "credentials": "include",
                 headers,
@@ -928,7 +928,7 @@ function Session(username, password) {
             })
         }
 
-        sContext.getSession = () => {
+        selfContext.getSession = () => {
             return fetch("https://scratch.mit.edu/session/", {
                 "credentials": "include",
                 headers,
@@ -937,7 +937,7 @@ function Session(username, password) {
             })
         }
 
-        sContext.getMessages = (offset, limit) => {
+        selfContext.getMessages = (offset, limit) => {
             return fetch(`https://api.scratch.mit.edu/users/${context.username}/messages?limit=${limit}}&offset=${offset}`, {
                 "credentials": "include",
                 headers,
@@ -946,7 +946,7 @@ function Session(username, password) {
             })
         }
 
-        sContext.shareProject = projectId => {
+        selfContext.shareProject = projectId => {
             return fetch(`https://api.scratch.mit.edu/proxy/projects/${projectId}/share`, {
                 "credentials": "include",
                 headers,
@@ -955,7 +955,7 @@ function Session(username, password) {
             })
         }
 
-        sContext.unshareProject = projectId => {
+        selfContext.unshareProject = projectId => {
             return fetch(`https://api.scratch.mit.edu/proxy/projects/${projectId}/unshare`, {
                 "credentials": "include",
                 headers,
@@ -964,7 +964,7 @@ function Session(username, password) {
             })
         }
 
-        sContext.setAsset = (file, extension) => {
+        selfContext.setAsset = (file, extension) => {
             const id = crypto.createHash("md5").update(file).digest("hex")
             return {
                 "promise": fetch(`https://assets.scratch.mit.edu/${id}.${extension}`, {
@@ -979,7 +979,7 @@ function Session(username, password) {
             }
         }
 
-        sContext.getActivity = (offset, limit) => {
+        selfContext.getActivity = (offset, limit) => {
             console.log(headers)
             return fetch("https://api.scratch.mit.edu/users/" + context.username + "/following/users/activity?limit=" + limit + "&offset=" + offset, {
                 "credentials": "include",
@@ -990,7 +990,7 @@ function Session(username, password) {
             })
         }
 
-        sContext.getFollowedStudioProjects = () => {
+        selfContext.getFollowedStudioProjects = () => {
             return fetch("https://api.scratch.mit.edu/users/" + context.username + "/following/studios/projects", {
                 "credentials": "include",
                 headers,
@@ -1000,7 +1000,7 @@ function Session(username, password) {
             })
         }
 
-        sContext.getFollowedUserProjects = () => {
+        selfContext.getFollowedUserProjects = () => {
             return fetch("https://api.scratch.mit.edu/users/" + context.username + "/following/users/projects", {
                 "credentials": "include",
                 headers,
@@ -1010,7 +1010,7 @@ function Session(username, password) {
             })
         }
 
-        sContext.getFollowedUserLoves = () => {
+        selfContext.getFollowedUserLoves = () => {
             return fetch("https://api.scratch.mit.edu/users/" + context.username + "/following/users/loves", {
                 "credentials": "include",
                 headers,
@@ -1020,7 +1020,7 @@ function Session(username, password) {
             })
         }
 
-        sContext.getRecentProjects = (offset, limit) => {
+        selfContext.getRecentProjects = (offset, limit) => {
             return fetch("https://api.scratch.mit.edu/users/" + context.username + "/projects/recentlyviewed?limit=" + limit + "&offset=" + offset, {
                 "credentials": "include",
                 headers,
@@ -1030,7 +1030,7 @@ function Session(username, password) {
             })
         }
 
-        sContext.createProject = data => {
+        selfContext.createProject = data => {
             return fetch("https://projects.scratch.mit.edu", {
                 "credentials": "include",
                 headers,
@@ -1041,7 +1041,7 @@ function Session(username, password) {
             })
         }
 
-        sContext.createStudio = () => {
+        selfContext.createStudio = () => {
             return fetch("https://scratch.mit.edu/studios/create/", {
                 "credentials": "include",
                 headers,

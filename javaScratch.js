@@ -23,7 +23,9 @@ function Session(username, password, options) {
         return head
     }
 
-    const userAgent = options.userAgent || "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/115.0"
+    const defaultUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/115.0"
+
+    const userAgent = options?(options.userAgent || defaultUserAgent) : defaultUserAgent
 
     const headers = {
         "referer": "https://scratch.mit.edu/",
@@ -192,7 +194,7 @@ function Session(username, password, options) {
                 "credentials": "include",
                 headers,
                 "referrer": "https://scratch.mit.edu/",
-                "method": "POST",
+                "method": "GET",
                 "mode": "cors"
             })
         },
@@ -201,7 +203,7 @@ function Session(username, password, options) {
                 "credentials": "include",
                 headers,
                 "referrer": "https://scratch.mit.edu/",
-                "method": "POST",
+                "method": "GET",
                 "mode": "cors"
             })
         }

@@ -123,11 +123,11 @@ function Session(username, password, options) {
         }
     }
 
-
     context.onReady = () => {
         console.log("Success.")
         console.log("\x1b[2mThis message/callback function can be changed. Set this function at session.onReady")
     }
+
     context.onFail = (message) => {
         console.log("Error: " + message)
         console.log("\x1b[2mThis message/callback function can be changed. Set this function at session.onFail")
@@ -162,7 +162,7 @@ function Session(username, password, options) {
                                 }).then(response => response.json().then(res => {
                                     headers["Cookie"] += `permissions=${encodeURIComponent(JSON.stringify(res.permissions))};`
                                     if (response.status === 200) context.onReady()
-                                    else context.onFail()
+                                    else context.onFail("Bad response")
                                 }))
                             } else {
                                 context.onFail("Bad response")
@@ -224,12 +224,12 @@ function Session(username, password, options) {
             })
         }
 
-        projectContext.setThumbnail = PngString => {
+        projectContext.setThumbnail = pngString => {
             return fetch("https://scratch.mit.edu/internalapi/project/thumbnail/" + projectContext.id + "/set/", {
                 "credentials": "include",
                 headers,
                 "referrer": "https://scratch.mit.edu/projects/" + projectContext.id + "/editor",
-                "body": PngString,
+                "body": pngString,
                 "method": "POST",
                 "mode": "cors"
             });

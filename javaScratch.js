@@ -279,7 +279,7 @@ function Session(username, password, options) {
             }))
         }
 
-        projectContext.getCommentReplies = (commentId, offset, limit) => {
+        projectContext.getCommentReplies = (offset, limit, commentId) => {
             return projectContext.getMeta().then(projectInformationRaw => projectInformationRaw.json().then(projectInformation => {
                 const user = projectInformation.author.username
                 return fetch(`https://api.scratch.mit.edu/users/${user}/projects/${projectContext.id}/comments/${commentId}/replies?offset=${offset}&limit=${limit}`, {
@@ -511,7 +511,7 @@ function Session(username, password, options) {
             )
         }
 
-        studioContext.getCommentReplies = (commentId, offset, limit) => {
+        studioContext.getCommentReplies = ( offset, limit, commentId) => {
             return fetch(`https://api.scratch.mit.edu/studios/${studioContext.id}/comments/${commentId}/replies?offset=${offset}&limit=${limit}`, {
                     "credentials": "omit",
                     headers,

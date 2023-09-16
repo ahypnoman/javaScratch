@@ -321,7 +321,7 @@ function Session(username, password, options) {
                 "credentials": "include",
                 headers,
                 "referrer": "https://scratch.mit.edu/",
-                "body": "{\"content\":\"" + content + "\",\"parent_id\":\"" + (replyOptions ? replyOptions.parent : "") + "\",\"commentee_id\":\"" + (replyOptions ? replyOptions.comentee : "") + "\"}",
+                "body": "{\"content\":\"" + content + "\",\"parent_id\":\"" + (replyOptions ? replyOptions.parent : "") + "\",\"commentee_id\":\"" + (replyOptions ? replyOptions.commentee : "") + "\"}",
                 "method": "POST",
                 "mode": "cors"
             })
@@ -537,7 +537,7 @@ function Session(username, password, options) {
                 "credentials": "include",
                 headers,
                 "referrer": "https://scratch.mit.edu/",
-                "body": "{\"content\":\"" + content + "\",\"parent_id\":\"" + (replyOptions ? replyOptions.parent : "") + "\",\"commentee_id\":\"" + (replyOptions ? replyOptions.comentee : "") + "\"}",
+                "body": "{\"content\":\"" + content + "\",\"parent_id\":\"" + (replyOptions ? replyOptions.parent : "") + "\",\"commentee_id\":\"" + (replyOptions ? replyOptions.commentee : "") + "\"}",
                 "method": "POST",
                 "mode": "cors"
             })

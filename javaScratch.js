@@ -211,6 +211,13 @@ function Session(username, password, options) {
 
     context.Project = function (projectId) {
         const projectContext = this
+
+        Object.defineProperty(projectContext, "id", {
+            value: projectId,
+            writable: false,
+            enumerable: true
+        })
+
         projectContext.id = projectId
 
         projectContext.setData = data => {
@@ -511,7 +518,7 @@ function Session(username, password, options) {
             )
         }
 
-        studioContext.getCommentReplies = ( offset, limit, commentId) => {
+        studioContext.getCommentReplies = (offset, limit, commentId) => {
             return fetch(`https://api.scratch.mit.edu/studios/${studioContext.id}/comments/${commentId}/replies?offset=${offset}&limit=${limit}`, {
                     "credentials": "omit",
                     headers,
@@ -522,7 +529,7 @@ function Session(username, password, options) {
             )
         }
 
-        studioContext.deleteComment = commentId => {
+        studioContext.removeComment = commentId => {
             return fetch("https://api.scratch.mit.edu/proxy/comments/studio/" + studioContext.id + "/comment/" + commentId, {
                 "credentials": "include",
                 headers,

@@ -580,8 +580,8 @@ function Session(username, password, options) {
             })
         }
 
-        studioContext.getActivity = limit => {
-            return fetch(`https://api.scratch.mit.edu/studios/${studioContext.id}/activity/?limit=${limit}`, {
+        studioContext.getActivity = (limit, dateOffset) => {
+            return fetch(`https://api.scratch.mit.edu/studios/${studioContext.id}/activity/?limit=${limit}` + (dateOffset?("&dateLimit=" + dateOffset) : ""), {
                 "credentials": "omit",
                 headers,
                 "referrer": "https://scratch.mit.edu/",

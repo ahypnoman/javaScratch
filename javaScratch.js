@@ -354,6 +354,16 @@ function Session(username, password, options) {
             })
         }
 
+        projectContext.getCloudLogs = (offset, limit) => {
+            return fetch("https://clouddata.scratch.mit.edu/logs?projectid=" + projectContext.id + "&limit=" + limit + "&offset=" + offset, {
+                "credentials": "include",
+                headers,
+                "referrer": "https://scratch.mit.edu/",
+                "method": "POST",
+                "mode": "cors"
+            })
+        }
+
         projectContext.CloudSocket = function (variablePresets) {
 
             let cloudSocketContext = this;
@@ -869,6 +879,7 @@ function Session(username, password, options) {
         const selfContext = this
         const user = new context.User(context.username)
 
+        selfContext.username = context.username
         selfContext.getInfo = user.getInfo
         selfContext.follow = user.follow
         selfContext.unfollow = user.unfollow

@@ -488,7 +488,6 @@ function Session(username, password, options) {
                     handleEvent(ev, cloudSocketContext.onOpen)
                 })
             }
-            cloudSocketContext.connect()
         }
     }
 

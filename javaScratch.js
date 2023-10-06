@@ -453,6 +453,7 @@ function Session(username, password, options) {
                     }
                 })
                 cloudSocketContext.socket.addEventListener("message", ev => {
+                    handleEvent(ev, cloudSocketContext.onMessage)
                     const data = JSON.parse(ev.data)
                     const set = new Event("set")
                     set.variable = data.name
@@ -475,15 +476,14 @@ function Session(username, password, options) {
                             handleEvent(remove, cloudSocketContext.onDelete)
                             break
                     }
-                    handleEvent(ev, cloudSocketContext.onMessage)
                 })
                 cloudSocketContext.socket.addEventListener("error", ev => handleEvent(ev, cloudSocketContext.onError))
                 cloudSocketContext.socket.addEventListener("close", ev => handleEvent(ev, cloudSocketContext.onClose))
                 cloudSocketContext.socket.addEventListener("open", ev => {
                     cloudSocketContext.socket.send(JSON.stringify({
-                        name: "handshake",
-                        user: context.username,
-                        project_id: projectContext.id
+                        "method": "handshake",
+                        "user": context.username,
+                        "project_id": projectContext.id
                     }) + "\n")
                     handleEvent(ev, cloudSocketContext.onOpen)
                 })

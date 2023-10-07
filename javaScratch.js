@@ -366,10 +366,39 @@ function Session(username, password, options) {
 
         projectContext.CloudSocket = function (variablePresets) {
 
-            let cloudSocketContext = this;
+            const cloudSocketContext = this;
 
             function handleEvent(ev, func) {
                 func(ev)
+            }
+
+            function handleMessage(ev) {
+                const dataArray = ev.data.split("\n")
+                dataArray.pop()
+                dataArray.forEach(rawData => {
+                    const data = JSON.parse(rawData)
+                    const set = new Event("set")
+                    set.variable = data.name
+                    set.value = data.value
+                    const create = new Event("create")
+                    create.variable = data.name
+                    const remove = new Event("delete")
+                    remove.variable = data.name
+                    switch (data.method) {
+                        case "set":
+                            cloudSocketContext.variables[data.name] = data.value
+                            handleEvent(set, cloudSocketContext.onSet)
+                            break
+                        case "create":
+                            cloudSocketContext.variables[data.name] = 0
+                            handleEvent(create, cloudSocketContext.onCreate)
+                            break
+                        case "delete":
+                            delete cloudSocketContext.variables[data.name]
+                            handleEvent(remove, cloudSocketContext.onDelete)
+                            break
+                    }
+                })
             }
 
             cloudSocketContext.onOpen = () => {
@@ -446,47 +475,30 @@ function Session(username, password, options) {
                 cloudSocketContext.socket.send(message)
             }
             cloudSocketContext.connect = () => {
+                console.log("connecting")
                 cloudSocketContext.socket = new WebSocket("wss://clouddata.scratch.mit.edu/", [], {
                     headers: {
                         cookie: "scratchsessionsid=" + context.sessionId + ";",
                         origin: "https://scratch.mit.edu"
                     }
                 })
-                cloudSocketContext.socket.addEventListener("message", ev => {
-                    handleEvent(ev, cloudSocketContext.onMessage)
-                    const data = JSON.parse(ev.data)
-                    const set = new Event("set")
-                    set.variable = data.name
-                    set.value = data.value
-                    const create = new Event("create")
-                    create.variable = data.name
-                    const remove = new Event("delete")
-                    remove.variable = data.name
-                    switch (data.method) {
-                        case "set":
-                            cloudSocketContext.variables[data.name] = data.value
-                            handleEvent(set, cloudSocketContext.onSet)
-                            break
-                        case "create":
-                            cloudSocketContext.variables[data.name] = 0
-                            handleEvent(create, cloudSocketContext.onCreate)
-                            break
-                        case "delete":
-                            delete cloudSocketContext.variables[data.name]
-                            handleEvent(remove, cloudSocketContext.onDelete)
-                            break
-                    }
-                })
                 cloudSocketContext.socket.addEventListener("error", ev => handleEvent(ev, cloudSocketContext.onError))
                 cloudSocketContext.socket.addEventListener("close", ev => handleEvent(ev, cloudSocketContext.onClose))
-                cloudSocketContext.socket.addEventListener("open", ev => {
+                cloudSocketContext.socket.addEventListener("open", () => {
                     cloudSocketContext.socket.send(JSON.stringify({
                         "method": "handshake",
                         "user": context.username,
                         "project_id": projectContext.id
                     }) + "\n")
-                    handleEvent(ev, cloudSocketContext.onOpen)
                 })
+                cloudSocketContext.socket.addEventListener("message", ev => {
+                    handleMessage(ev)
+                    handleEvent(ev, cloudSocketContext.onOpen)
+                    cloudSocketContext.socket.addEventListener("message", ev => {
+                        handleMessage(ev)
+                        handleEvent(ev, cloudSocketContext.onMessage)
+                    })
+                }, {once : true})
             }
         }
     }

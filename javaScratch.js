@@ -475,7 +475,6 @@ function Session(username, password, options) {
                 cloudSocketContext.socket.send(message)
             }
             cloudSocketContext.connect = () => {
-                console.log("connecting")
                 cloudSocketContext.socket = new WebSocket("wss://clouddata.scratch.mit.edu/", [], {
                     headers: {
                         cookie: "scratchsessionsid=" + context.sessionId + ";",
@@ -1011,7 +1010,6 @@ function Session(username, password, options) {
         }
 
         selfContext.getActivity = (offset, limit) => {
-            console.log(headers)
             return fetch("https://api.scratch.mit.edu/users/" + context.username + "/following/users/activity?limit=" + limit + "&offset=" + offset, {
                 "credentials": "include",
                 headers,

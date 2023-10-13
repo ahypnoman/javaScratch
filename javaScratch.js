@@ -221,7 +221,7 @@ function Session(username, password, options) {
         projectContext.id = projectId
 
         projectContext.setData = data => {
-            return fetch(`https://projects.scratch.mit.edu/${projectContext.id}`, {
+            return fetch(`https://api.scratch.mit.edu/projects/${projectContext.id}`, {
                 "credentials": "include",
                 headers,
                 "referrer": "https://scratch.mit.edu/",

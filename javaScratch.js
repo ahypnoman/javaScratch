@@ -8,7 +8,7 @@ function Session(username, password, options) {
         const request = fetch("https://scratch.mit.edu/csrf_token/")
         if (setVars) request.then(res => {
             const csrf = res.headers.get("set-cookie").split("scratchcsrftoken=")[1].split(";")[0]
-            headers["Cookie"] = `scratchcsrftoken=${csrf};`
+            headers["Cookie"] = `scratchcsrftoken=${csrf};${context.sessionId?`scratchsessionsid=${context.sessionId};`:""}`
             headers["X-CSRFToken"] = csrf
             context.csrfToken = csrf
         })
@@ -45,9 +45,8 @@ function Session(username, password, options) {
 
     context.csrfToken = null
     context.xToken = null
-    context.sessionId = null
+    context.sessionId = options?(options.sessionId || null) : null
 
-    context.password = password
     context.username = username
 
     context.loginStatus = false
@@ -137,20 +136,28 @@ function Session(username, password, options) {
         if (!context.initialized) {
             getCSRF(true).then(r => {
                 if (r.status === 200) {
-                    fetch("https://scratch.mit.edu/accounts/login/", {
+                    ((context.sessionId === null) ? fetch("https://scratch.mit.edu/accounts/login/", {
                         "credentials": "include",
                         headers,
                         "referrer": "https://scratch.mit.edu/",
-                        "body": "{\"username\":\"" + context.username + "\",\"password\":\"" + context.password + "\",\"useMessages\":true}",
+                        "body": "{\"username\":\"" + context.username + "\",\"password\":\"" + password + "\",\"useMessages\":true}",
                         "method": "POST",
                         "mode": "cors"
 
-                    }).then(response =>
+                    }) : fetch("https://scratch.mit.edu/session/", {
+                        "credentials": "include",
+                        headers,
+                        "referrer": "https://scratch.mit.edu/",
+                        "method": "GET",
+                        "mode": "cors"
+                    })).then(response =>
                         response.json().then(res => {
-                            const data = res[0]
-                            if (data.success === 1 && response.status === 200) {
+                            const gotFromSession = !!res["user"]
+                            const data = ((gotFromSession) ? res["user"] : res[0])
+                            if ((data.success === 1 || gotFromSession) && response.status === 200) {
                                 context.initialized = true
-                                context.sessionId = response.headers.get("set-cookie").split("scratchsessionsid=")[1].split(";")[0]
+                                if (!gotFromSession) context.sessionId = response.headers.get("set-cookie").split("scratchsessionsid=")[1].split(";")[0]
+                                context.username = res.username
                                 context.xToken = data.token
                                 headers["X-Token"] = context.xToken
                                 headers["Cookie"] = `scratchcsrftoken=${context.csrfToken};scratchsessionsid=${context.sessionId};`

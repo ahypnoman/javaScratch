@@ -8,4 +8,4 @@ javaScratch is a Node.js Javascript module for interacting with the Scratch API.
 Both come pre-installed.
 
 ## Docs:
-[Site](ahypnoman.github.io/javaScratch.html?tab=documentation)
+[Site](https://ahypnoman.github.io/javaScratch.html?tab=documentation)

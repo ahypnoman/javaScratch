@@ -437,7 +437,7 @@ function Session(username, password, options) {
             cloudSocketContext.setVar = (varName, value) => {
                 const message = `${JSON.stringify({
                     "method": "set",
-                    "user": username,
+                    "user": context.username,
                     "project_id": projectContext.id,
                     "name": varName,
                     "value": value
@@ -454,7 +454,7 @@ function Session(username, password, options) {
             cloudSocketContext.createVar = varName => {
                 const message = `${JSON.stringify({
                     "method": "set",
-                    "user": username,
+                    "user": context.username,
                     "project_id": projectContext.id,
                     "name": varName
 
@@ -469,7 +469,7 @@ function Session(username, password, options) {
             cloudSocketContext.deleteVar = varName => {
                 const message = `${JSON.stringify({
                     "method": "delete",
-                    "user": username,
+                    "user": context.username,
                     "project_id": projectContext.id,
                     "name": varName
                 })}\n`

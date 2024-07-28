@@ -143,7 +143,6 @@ function Session(username, password, options) {
                         "body": "{\"username\":\"" + context.username + "\",\"password\":\"" + password + "\",\"useMessages\":true}",
                         "method": "POST",
                         "mode": "cors"
-
                     }) : fetch("https://scratch.mit.edu/session/", {
                         "credentials": "include",
                         headers,
@@ -157,7 +156,7 @@ function Session(username, password, options) {
                             if ((data.success === 1 || gotFromSession) && response.status === 200) {
                                 context.initialized = true
                                 if (!gotFromSession) context.sessionId = response.headers.get("set-cookie").split("scratchsessionsid=")[1].split(";")[0]
-                                context.username = res.username
+                                context.username = res.user.username
                                 context.xToken = data.token
                                 headers["X-Token"] = context.xToken
                                 headers["Cookie"] = `scratchcsrftoken=${context.csrfToken};scratchsessionsid=${context.sessionId};`
